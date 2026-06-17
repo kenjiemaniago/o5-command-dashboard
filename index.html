@@ -2,27 +2,475 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>O5 Command Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O5 Command Dashboard & Analytics</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; text-align: center; }
-        h1 { margin-bottom: 30px; color: #38bdf8; }
-        .dashboard-container { display: flex; justify-content: center; gap: 20px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 10px; width: 250px; border: 1px solid #334155; }
-        .loading { font-size: 1.2rem; color: #94a3b8; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; margin: 0; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        h2 { font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 15px; color: #e2e8f0; border-left: 4px solid #2563eb; padding-left: 10px; }
+        
+        .control-panel-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .calendar-picker { background: #1e293b; border: 1px solid #334155; padding: 9px 14px; border-radius: 6px; color: white; font-family: inherit; font-size: 14px; outline: none; }
+        .calendar-picker::-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        
+        .btn-download { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: inherit; }
+        .btn-download:hover { background: #1d4ed8; }
+        
+        /* Interactive Upper KPI Summary Grid */
+        .metrics-row { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+        .metric-card { background: #1e293b; border: 1px solid #334155; padding: 18px 25px; border-radius: 8px; min-width: 200px; cursor: pointer; transition: all 0.2s ease; user-select: none; position: relative; }
+        .metric-card:hover { border-color: #475569; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .metric-card.active-filter { border-color: #2563eb; background: #1e293b linear-gradient(180deg, rgba(37,99,235,0.05) 0%, rgba(0,0,0,0) 100%); }
+        .metric-val { font-size: 32px; font-weight: 800; margin-top: 5px; }
+        .metric-lbl { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; background: #2563eb; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold; display: none; }
+        .metric-card.active-filter .filter-badge { display: block; }
+
+        /* Monitor View Grid */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .dash-card { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 20px; border-left: 5px solid #475569; transition: all 0.2s; }
+        .status-avail { border-left-color: #10b981; }
+        .status-break { border-left-color: #f59e0b; }
+        .status-aux { border-left-color: #3b82f6; }
+        .dash-agent-name { font-size: 16px; font-weight: 700; color: white; }
+        .dash-state-label { font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; color: #94a3b8; }
+        .status-avail .dash-state-label { color: #10b981; }
+        .status-break .dash-state-label { color: #f59e0b; }
+        .status-aux .dash-state-label { color: #3b82f6; }
+        .timer-display { font-size: 32px; font-weight: 800; color: white; font-variant-numeric: tabular-nums; }
+        .placeholder-display { font-size: 32px; font-weight: 500; color: #475569; }
+        .card-footer-info { font-size: 11px; color: #64748b; margin-top: 8px; border-top: 1px solid #334155; padding-top: 8px; line-height: 1.4; }
+        
+        /* Reporting Layout & Sheet Views */
+        .reporting-section-wrapper { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
+        .report-panel { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { padding: 12px; border-bottom: 2px solid #334155; color: #94a3b8; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+        td { padding: 12px; border-bottom: 1px solid #334155; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+        tr:hover td { background: #223147; }
+        
+        .live-indicator { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+        .live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: blink 1s infinite alternate; }
+        @keyframes blink { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+        
+        .badge-table { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .badge-avail { background: rgba(16,185,129,0.15); color: #10b981; }
+        .badge-break { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .badge-aux { background: rgba(59,130,246,0.15); color: #3b82f6; }
     </style>
 </head>
 <body>
-    <h1>O5 Command Dashboard</h1>
-    <div id="live-board" class="dashboard-container">
-        <div class="card">
-            <h3>System Status</h3>
-            <p id="status-text" class="loading">Connecting to data source...</p>
+
+    <div class="header-section">
+        <div>
+            <h1>O5 System Command Dashboard</h1>
+            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">Real-Time Operational Exceptions Node & Productivity Matrix</p>
+        </div>
+        <div class="control-panel-row">
+            <input type="date" id="reportDatePicker" class="calendar-picker" onchange="triggerManualDateFilter()">
+            <div class="live-indicator"><span class="live-dot"></span> LIVE REFRESH</div>
+            <button class="btn-download" onclick="exportComprehensiveCSV()">📋 Export End-of-Day Ledger (.csv)</button>
+        </div>
+    </div>
+
+    <!-- UPPER ROW METRIC BOXES: COMBINED STAFF HOUSING & INTERACTIVE FILTER SLOTS -->
+    <div class="metrics-row">
+        <div id="cardFilterAll" class="metric-card active-filter" onclick="setDashboardFilter('ALL')">
+            <span class="filter-badge">VIEWING ALL</span>
+            <div class="metric-lbl">Total Staff Logged-In</div>
+            <div id="mTotal" class="metric-val" style="color: #ffffff;">0</div>
+        </div>
+        <div id="cardFilterAvail" class="metric-card" onclick="setDashboardFilter('AVAILABLE')">
+            <span class="filter-badge">FILTERED</span>
+            <div class="metric-lbl">Available Queue Staff</div>
+            <div id="mAvail" class="metric-val" style="color: #10b981;">0</div>
+        </div>
+        <div id="cardFilterBreak" class="metric-card" onclick="setDashboardFilter('BREAK')">
+            <span class="filter-badge">FILTERED</span>
+            <div class="metric-lbl">On Break / Lunch</div>
+            <div id="mBreak" class="metric-val" style="color: #f59e0b;">0</div>
+        </div>
+        <div id="cardFilterAux" class="metric-card" onclick="setDashboardFilter('AUX')">
+            <span class="filter-badge">FILTERED</span>
+            <div class="metric-lbl">In Operational AUX</div>
+            <div id="mAux" class="metric-val" style="color: #3b82f6;">0</div>
+        </div>
+    </div>
+
+    <!-- LIVE ROSTER MONITOR WATCH WINDOW -->
+    <h2 style="margin-top: 10px;">🔴 Real-Time Exception & Status Watch Window</h2>
+    <div id="dashboardGrid" class="dashboard-grid"></div>
+
+    <!-- ANALYTICS REPORTING PANELS VIEW -->
+    <div class="reporting-section-wrapper">
+        
+        <!-- REPORT VIEW 1: ATTENDANCE & NET AVAILABILITY REPORT -->
+        <div class="report-panel">
+            <h2>📊 Attendance & Queue Availability Summary</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Agent Name</th>
+                            <th>First Clock In</th>
+                            <th>Last Clock Out</th>
+                            <th>Total Shift Duration</th>
+                            <th>Total Time Spent Available</th>
+                            <th>Queue Utilization Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceReportBody">
+                        <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 15px;">No active attendance metrics compiling...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- REPORT VIEW 2: AUX CODE ADHERENCE COVERAGE REPORT -->
+        <div class="report-panel">
+            <h2>⏱️ AUX Code Adherence & Runtime Coverage Tracker (Minutes Covered)</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Agent Name</th>
+                            <th>☕ Coffee (Max 10m)</th>
+                            <th>1st Break (Max 15m)</th>
+                            <th>🍱 Lunch (Max 60m)</th>
+                            <th>2nd Break (Max 15m)</th>
+                            <th>🛠️ System Issue / Biz AUX</th>
+                            <th>Total Offline Minutes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adherenceReportBody">
+                        <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 15px;">No auxiliary exceptions mapped...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        // We will replace this section once your Google Sheet is ready
-        document.getElementById('status-text').innerText = "Live: System Operational";
+        let selectedFilterDate = "";
+        let currentTargetFilter = "ALL"; // ALL, AVAILABLE, BREAK, AUX
+
+        function getShiftReportingDate(inputDate) {
+            const d = inputDate || new Date();
+            const hours = d.getHours();
+            if (hours >= 0 && hours < 5) {
+                const yesterday = new Date(d.getTime());
+                yesterday.setDate(yesterday.getDate() - 1);
+                return `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+            }
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function initializeCalendarField() {
+            if (!selectedFilterDate) {
+                selectedFilterDate = getShiftReportingDate(new Date());
+                document.getElementById('reportDatePicker').value = selectedFilterDate;
+            }
+        }
+
+        function triggerManualDateFilter() {
+            selectedFilterDate = document.getElementById('reportDatePicker').value;
+            refreshDashboardEngine();
+        }
+
+        function setDashboardFilter(filterType) {
+            currentTargetFilter = filterType;
+            
+            // Toggle visual selection ring styles
+            document.querySelectorAll('.metric-card').forEach(c => c.classList.remove('active-filter'));
+            if(filterType === 'ALL') document.getElementById('cardFilterAll').classList.add('active-filter');
+            if(filterType === 'AVAILABLE') document.getElementById('cardFilterAvail').classList.add('active-filter');
+            if(filterType === 'BREAK') document.getElementById('cardFilterBreak').classList.add('active-filter');
+            if(filterType === 'AUX') document.getElementById('cardFilterAux').classList.add('active-filter');
+            
+            refreshDashboardEngine();
+        }
+
+        function formatHMS(totalSeconds) {
+            if (totalSeconds < 0 || isNaN(totalSeconds)) totalSeconds = 0;
+            const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            return `${hrs}:${mins}:${secs}`;
+        }
+
+        function compileOperationalMetrics() {
+            initializeCalendarField();
+            const logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+            const filteredLogs = logs.filter(l => l.date === selectedFilterDate);
+            const distinctActiveAgents = [...new Set(filteredLogs.map(l => l.name))];
+            
+            const registry = {};
+            distinctActiveAgents.forEach(name => {
+                registry[name] = {
+                    timeInStr: "--",
+                    timeOutStr: "--",
+                    currentActivity: "Offline",
+                    lastActionEpoch: 0,
+                    // Segment-by-segment break tracker map
+                    auxBreakdownSecs: {
+                        "Coffee Break": 0,
+                        "1st Break": 0,
+                        "Lunch": 0,
+                        "2nd Break": 0,
+                        "Operational AUX": 0 // Coaching, Meeting, System Issue, Training
+                    },
+                    totalShiftSecs: 0,
+                    netAvailableSecs: 0,
+                    historicalTransactions: []
+                };
+            });
+
+            filteredLogs.forEach(log => {
+                const agentData = registry[log.name];
+                if (log.activity === "Time In" && agentData.timeInStr === "--") {
+                    agentData.timeInStr = log.time;
+                }
+                if (log.activity === "Time Out") {
+                    agentData.timeOutStr = log.time;
+                }
+                agentData.historicalTransactions.push(log);
+            });
+
+            const currentEpoch = Date.now();
+
+            Object.keys(registry).forEach(name => {
+                const item = registry[name];
+                const txn = item.historicalTransactions;
+                if (txn.length === 0) return;
+
+                txn.sort((a, b) => a.timestamp - b.timestamp);
+
+                const initialClockIn = txn.find(t => t.activity === "Time In");
+                const terminalClockOut = txn.find(t => t.activity === "Time Out");
+                
+                const latestTxn = txn[txn.length - 1];
+                item.currentActivity = latestTxn.activity;
+                item.lastActionEpoch = latestTxn.timestamp;
+
+                // Process historical complete items
+                txn.forEach(step => {
+                    if (step.status === "Completed" || step.status === "Paused Segment") {
+                        if (item.auxBreakdownSecs.hasOwnProperty(step.activity)) {
+                            item.auxBreakdownSecs[step.activity] += step.duration;
+                        } else if(step.activity !== "Time In" && step.activity !== "Available" && step.activity !== "Time Out") {
+                            item.auxBreakdownSecs["Operational AUX"] += step.duration;
+                        }
+                    }
+                });
+
+                // Compute real-time accumulation frames
+                if (initialClockIn) {
+                    if (item.currentActivity !== "Time Out") {
+                        item.totalShiftSecs = Math.floor((currentEpoch - initialClockIn.timestamp) / 1000);
+                        
+                        const actLower = item.currentActivity.toLowerCase();
+                        // If agent is sitting inside a live break state right now, pile on rolling tally
+                        if (actLower !== "time in" && actLower !== "available") {
+                            const rollingLiveDelta = Math.floor((currentEpoch - item.lastActionEpoch) / 1000);
+                            if (item.auxBreakdownSecs.hasOwnProperty(item.currentActivity)) {
+                                item.auxBreakdownSecs[item.currentActivity] += rollingLiveDelta;
+                            } else {
+                                item.auxBreakdownSecs["Operational AUX"] += rollingLiveDelta;
+                            }
+                        }
+                    } else if (terminalClockOut) {
+                        item.totalShiftSecs = Math.floor((terminalClockOut.timestamp - initialClockIn.timestamp) / 1000);
+                        item.currentActivity = "Offline";
+                    }
+
+                    // Sum offline time total
+                    let totalOfflineTimeSum = 0;
+                    Object.keys(item.auxBreakdownSecs).forEach(k => { totalOfflineTimeSum += item.auxBreakdownSecs[k]; });
+                    
+                    // Available Time calculation: Anything spent outside offline AUX segments is active Queue Availability
+                    item.netAvailableSecs = item.totalShiftSecs - totalOfflineTimeSum;
+                    if(item.netAvailableSecs < 0) item.netAvailableSecs = 0;
+                }
+            });
+
+            return registry;
+        }
+
+        function refreshDashboardEngine() {
+            const registry = compileOperationalMetrics();
+            const grid = document.getElementById('dashboardGrid');
+            const attendanceTable = document.getElementById('attendanceReportBody');
+            const adherenceTable = document.getElementById('adherenceReportBody');
+            const currentEpoch = Date.now();
+
+            grid.innerHTML = "";
+            let countTotal = 0, countBreak = 0, countAux = 0, countAvail = 0;
+
+            // Arrays to parse reporting views data engines
+            let attendanceRowsHTML = "";
+            let adherenceRowsHTML = "";
+
+            Object.keys(registry).forEach(name => {
+                const metrics = registry[name];
+                if (metrics.currentActivity === "Offline") return; // Filter out completely off-shift personnel
+
+                countTotal++;
+                let categorisedGroup = "AVAILABLE"; 
+                let structuralClass = "status-avail";
+                let activeTimerRenderText = "—";
+                let isExceptionActive = false;
+
+                const actLower = metrics.currentActivity.toLowerCase();
+                // Treat basic system entry states ("Time In" or "Available") as Queue Available pools automatically
+                if (actLower === "available" || actLower === "time in") {
+                    countAvail++;
+                    categorisedGroup = "AVAILABLE";
+                    structuralClass = "status-avail";
+                } else if (actLower.includes("break") || actLower === "lunch") {
+                    countBreak++;
+                    categorisedGroup = "BREAK";
+                    structuralClass = "status-break";
+                    isExceptionActive = true;
+                } else {
+                    countAux++;
+                    categorisedGroup = "AUX";
+                    structuralClass = "status-aux"; 
+                    isExceptionActive = true;
+                }
+
+                if (isExceptionActive && metrics.lastActionEpoch > 0) {
+                    const realTimeDurationSecs = Math.floor((currentEpoch - metrics.lastActionEpoch) / 1000);
+                    activeTimerRenderText = formatHMS(realTimeDurationSecs).substring(3);
+                }
+
+                // EVALUATE INTERACTIVE TOGGLE CARD FILTER RULES BEFORE LAYING DOWN MONITORS
+                let matchFilter = false;
+                if (currentTargetFilter === "ALL") matchFilter = true;
+                else if (currentTargetFilter === categorisedGroup) matchFilter = true;
+
+                if (matchFilter) {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = `dash-card ${structuralClass}`;
+                    cardElement.innerHTML = `
+                        <div class="dash-agent-name">${name}</div>
+                        <div class="dash-state-label">State: ${metrics.currentActivity === 'Time In' ? 'Available' : metrics.currentActivity}</div>
+                        ${isExceptionActive ? `<div class="timer-display">${activeTimerRenderText}</div>` : `<div class="placeholder-display">Available</div>`}
+                        <div class="card-footer-info">
+                            Time In: <b>${metrics.timeInStr}</b><br>
+                            Accumulated Availability: <b>${formatHMS(metrics.netAvailableSecs)}</b>
+                        </div>
+                    `;
+                    grid.appendChild(cardElement);
+                }
+            });
+
+            // Update Header widgets count
+            document.getElementById('mTotal').innerText = countTotal;
+            document.getElementById('mAvail').innerText = countAvail;
+            document.getElementById('mBreak').innerText = countBreak;
+            document.getElementById('mAux').innerText = countAux;
+
+            if(grid.innerHTML === "") {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #475569; padding: 30px; background: #1e293b; border-radius: 8px;">No agents found matching this active status view context.</div>`;
+            }
+
+            // COMPILE REPORT 1 AND REPORT 2 LINE ITEMS OVER THE CURRENT ROSTER
+            const sortedRosterNames = Object.keys(registry).sort();
+            
+            if(sortedRosterNames.length === 0) {
+                const emptyRow = `<tr><td colspan="10" style="text-align:center; color:#64748b;">No production metrics archived for this calendar date.</td></tr>`;
+                attendanceTable.innerHTML = emptyRow;
+                adherenceTable.innerHTML = emptyRow;
+                return;
+            }
+
+            sortedRosterNames.forEach(name => {
+                const m = registry[name];
+                
+                // Calculate utilization percentage logic safely
+                let utilPercentage = "0%";
+                if(m.totalShiftSecs > 0) {
+                    utilPercentage = `${Math.round((m.netAvailableSecs / m.totalShiftSecs) * 100)}%`;
+                }
+
+                // Report View Line 1 String Builder
+                attendanceRowsHTML += `
+                    <tr>
+                        <td style="font-weight:700; color:white;">${name}</td>
+                        <td><span class="badge-table badge-avail">${m.timeInStr}</span></td>
+                        <td><span class="badge-table ${m.timeOutStr !== '--' ? 'badge-break':'badge-avail'}">${m.timeOutStr}</span></td>
+                        <td>${formatHMS(m.totalShiftSecs)}</td>
+                        <td style="font-weight:700; color:#10b981;">${formatHMS(m.netAvailableSecs)}</td>
+                        <td style="color:#3b82f6; font-weight:600;">${utilPercentage}</td>
+                    </tr>
+                `;
+
+                // Convert operational seconds records down into minutes for clear adherence tracking views
+                let coffeeMins = (m.auxBreakdownSecs["Coffee Break"] / 60).toFixed(1);
+                let break1Mins = (m.auxBreakdownSecs["1st Break"] / 60).toFixed(1);
+                let lunchMins = (m.auxBreakdownSecs["Lunch"] / 60).toFixed(1);
+                let break2Mins = (m.auxBreakdownSecs["2nd Break"] / 60).toFixed(1);
+                let bizAuxMins = (m.auxBreakdownSecs["Operational AUX"] / 60).toFixed(1);
+
+                let absoluteOfflineSecs = 0;
+                Object.keys(m.auxBreakdownSecs).forEach(k => { absoluteOfflineSecs += m.auxBreakdownSecs[k]; });
+                let cumulativeOfflineMins = (absoluteOfflineSecs / 60).toFixed(1);
+
+                // Check and highlight over-break limits dynamically with red alert labels
+                let coffeeClass = parseFloat(coffeeMins) > 10 ? 'style="color:#ef4444; font-weight:bold;"' : '';
+                let break1Class = parseFloat(break1Mins) > 15 ? 'style="color:#ef4444; font-weight:bold;"' : '';
+                let lunchClass = parseFloat(lunchMins) > 60 ? 'style="color:#ef4444; font-weight:bold;"' : '';
+                let break2Class = parseFloat(break2Mins) > 15 ? 'style="color:#ef4444; font-weight:bold;"' : '';
+
+                // Report View Line 2 String Builder
+                adherenceRowsHTML += `
+                    <tr>
+                        <td style="font-weight:700; color:white;">${name}</td>
+                        <td ${coffeeClass}>${coffeeMins}m</td>
+                        <td ${break1Class}>${break1Mins}m</td>
+                        <td ${lunchClass}>${lunchMins}m</td>
+                        <td ${break2Class}>${break2Mins}m</td>
+                        <td style="color:#94a3b8;">${bizAuxMins}m</td>
+                        <td style="font-weight:700; color:#f59e0b;">${cumulativeOfflineMins}m</td>
+                    </tr>
+                `;
+            });
+
+            attendanceTable.innerHTML = attendanceRowsHTML;
+            adherenceTable.innerHTML = adherenceRowsHTML;
+        }
+
+        function exportComprehensiveCSV() {
+            const registry = compileOperationalMetrics();
+            const names = Object.keys(registry);
+            if (names.length === 0) return alert("Zero metrics database entries found to compile into report on this date.");
+
+            let csvStr = "data:text/csv;charset=utf-8,";
+            csvStr += "Date Target,Agent Profile Name,First Shift Login,Shift Logout,Total Running Shift Seconds,Net Available Queue Seconds,Coffee AUX Mins,1st Break Mins,Lunch Mins,2nd Break Mins,Other System AUX Mins\n";
+            
+            names.forEach(n => {
+                const m = registry[n];
+                let cMin = (m.auxBreakdownSecs["Coffee Break"] / 60).toFixed(2);
+                let b1Min = (m.auxBreakdownSecs["1st Break"] / 60).toFixed(2);
+                let lMin = (m.auxBreakdownSecs["Lunch"] / 60).toFixed(2);
+                let b2Min = (m.auxBreakdownSecs["2nd Break"] / 60).toFixed(2);
+                let auxMin = (m.auxBreakdownSecs["Operational AUX"] / 60).toFixed(2);
+                
+                csvStr += `"${selectedFilterDate}","${n}","${m.timeInStr}","${m.timeOutStr}","${m.totalShiftSecs}","${m.netAvailableSecs}","${cMin}","${b1Min}","${lMin}","${b2Min}","${auxMin}"\n`;
+            });
+
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvStr));
+            link.setAttribute("download", `O5_EOD_Master_Operational_Ledger_${selectedFilterDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        setInterval(refreshDashboardEngine, 1000);
+        window.onload = refreshDashboardEngine;
     </script>
 </body>
 </html>
