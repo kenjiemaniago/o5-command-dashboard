@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>O5 Command Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; text-align: center; }
+        h1 { margin-bottom: 30px; color: #38bdf8; }
+        .dashboard-container { display: flex; justify-content: center; gap: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 10px; width: 250px; border: 1px solid #334155; }
+        .loading { font-size: 1.2rem; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>O5 Command Dashboard</h1>
+    <div id="live-board" class="dashboard-container">
+        <div class="card">
+            <h3>System Status</h3>
+            <p id="status-text" class="loading">Connecting to data source...</p>
+        </div>
+    </div>
+
+    <script>
+        // We will replace this section once your Google Sheet is ready
+        document.getElementById('status-text').innerText = "Live: System Operational";
+    </script>
+</body>
+</html>
