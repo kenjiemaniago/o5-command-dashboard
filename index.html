@@ -1,163 +1,169 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O5 Command Dashboard & Analytics</title>
+    <title>O5 Break Tracker - Agent Hub</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; margin: 0; }
-        .header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 20px; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-        h2 { font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 15px; color: #e2e8f0; border-left: 4px solid #2563eb; padding-left: 10px; }
+        :root[data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --btn-secondary: #f1f5f9;
+            --btn-secondary-hover: #e2e8f0;
+            --shadow: 0 10px 30px -5px rgba(0,0,0,0.05), 0 4px 12px -2px rgba(0,0,0,0.03);
+        }
+        :root[data-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --btn-secondary: #334155;
+            --btn-secondary-hover: #475569;
+            --shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg-main); color: var(--text-main); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; transition: background 0.3s, color 0.3s; }
+        .theme-toggle { position: absolute; top: 20px; right: 20px; background: var(--btn-secondary); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .theme-toggle:hover { background: var(--btn-secondary-hover); }
+        .card { background: var(--bg-card); padding: 40px 30px; border-radius: 16px; box-shadow: var(--shadow); width: 380px; text-align: center; border: 1px solid var(--border-color); transition: all 0.3s; }
+        h2 { margin-top: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 24px; }
+        p { color: var(--text-muted); font-size: 14px; margin-top: -10px; margin-bottom: 25px; }
+        select, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); font-size: 15px; box-sizing: border-box; font-family: inherit; transition: all 0.2s ease; }
+        select { background: var(--bg-card); color: var(--text-main); cursor: pointer; }
+        select:focus { outline: none; border-color: #2563eb; }
+        label { display: block; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; margin-top: 10px; }
+        button.primary { background: #2563eb; color: white; border: none; cursor: pointer; font-weight: 600; }
+        button.primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+        button.break-btn { background: var(--btn-secondary); color: var(--text-main); border: 1px solid var(--border-color); cursor: pointer; font-weight: 500; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        button.break-btn:hover:not(:disabled) { background: var(--btn-secondary-hover); border-color: #2563eb; color: #2563eb; }
+        button.break-btn:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+        .hidden { display: none !important; }
+        #timerDisplay { font-size: 64px; font-weight: 800; letter-spacing: -2px; margin: 15px 0; color: #16a34a; }
+        .overtime { color: #dc2626 !important; animation: pulse 1s infinite alternate; }
+        .unbounded { color: #2563eb !important; }
+        @keyframes pulse { 0% { opacity: 1; } 100% { opacity: 0.6; } }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 30px; background: #e0f2fe; color: #0369a1; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+        [data-theme="dark"] .status-badge { background: rgba(3, 105, 161, 0.2); color: #7dd3fc; }
+        .flex-container { display: flex; gap: 10px; margin: 8px 0; }
+        .flex-container button { margin: 0; }
+        .brand-text { font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; display: block; }
+        .recovery-banner { font-size: 11px; background: #fef3c7; color: #92400e; font-weight: bold; border-radius: 6px; padding: 6px; margin-bottom: 12px; border: 1px solid #fde68a; display: none; }
+        [data-theme="dark"] .recovery-banner { background: rgba(146, 64, 14, 0.2); color: #fcd34d; border-color: rgba(253, 230, 138, 0.2); }
         
-        .control-panel-row { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .calendar-picker { background: #1e293b; border: 1px solid #334155; padding: 9px 14px; border-radius: 6px; color: white; font-family: inherit; font-size: 14px; outline: none; }
-        .calendar-picker::-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
-        
-        .btn-download { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: inherit; }
-        .btn-download:hover { background: #1d4ed8; }
-        
-        /* Interactive Upper KPI Summary Grid */
-        .metrics-row { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
-        .metric-card { background: #1e293b; border: 1px solid #334155; padding: 18px 25px; border-radius: 8px; min-width: 200px; cursor: pointer; transition: all 0.2s ease; user-select: none; position: relative; }
-        .metric-card:hover { border-color: #475569; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .metric-card.active-filter { border-color: #2563eb; background: #1e293b linear-gradient(180deg, rgba(37,99,235,0.05) 0%, rgba(0,0,0,0) 100%); }
-        .metric-val { font-size: 32px; font-weight: 800; margin-top: 5px; }
-        .metric-lbl { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .filter-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; background: #2563eb; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold; display: none; }
-        .metric-card.active-filter .filter-badge { display: block; }
-
-        /* Monitor View Grid */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .dash-card { background: #1e293b; border-radius: 12px; border: 1px solid #334155; padding: 20px; border-left: 5px solid #475569; transition: all 0.2s; }
-        .status-avail { border-left-color: #10b981; }
-        .status-break { border-left-color: #f59e0b; }
-        .status-aux { border-left-color: #3b82f6; }
-        .dash-agent-name { font-size: 16px; font-weight: 700; color: white; }
-        .dash-state-label { font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; color: #94a3b8; }
-        .status-avail .dash-state-label { color: #10b981; }
-        .status-break .dash-state-label { color: #f59e0b; }
-        .status-aux .dash-state-label { color: #3b82f6; }
-        .timer-display { font-size: 32px; font-weight: 800; color: white; font-variant-numeric: tabular-nums; }
-        .placeholder-display { font-size: 32px; font-weight: 500; color: #475569; }
-        .card-footer-info { font-size: 11px; color: #64748b; margin-top: 8px; border-top: 1px solid #334155; padding-top: 8px; line-height: 1.4; }
-        
-        /* Reporting Layout & Sheet Views */
-        .reporting-section-wrapper { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
-        .report-panel { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 25px; }
-        
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th { padding: 12px; border-bottom: 2px solid #334155; color: #94a3b8; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
-        td { padding: 12px; border-bottom: 1px solid #334155; color: #e2e8f0; font-variant-numeric: tabular-nums; }
-        tr:hover td { background: #223147; }
-        
-        .live-indicator { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
-        .live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: blink 1s infinite alternate; }
-        @keyframes blink { 0% { opacity: 0.4; } 100% { opacity: 1; } }
-        
-        .badge-table { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .badge-avail { background: rgba(16,185,129,0.15); color: #10b981; }
-        .badge-break { background: rgba(245,158,11,0.15); color: #f59e0b; }
-        .badge-aux { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        /* Premium Shielded Exit Drawer Box */
+        .timeout-drawer { border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 20px; }
+        .btn-timeout-reveal { background: transparent; border: none; color: var(--text-muted); font-size: 13px; font-weight: 500; text-decoration: underline; cursor: pointer; width: auto; padding: 0; margin: 10px 0 0 0; }
+        .btn-timeout-reveal:hover { color: #dc2626; }
+        .btn-abort { background: var(--btn-secondary); color: var(--text-main); }
+        .btn-abort:hover { background: var(--btn-secondary-hover); }
     </style>
 </head>
 <body>
 
-    <div class="header-section">
-        <div>
-            <h1>O5 System Command Dashboard</h1>
-            <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">Real-Time Operational Exceptions Node & Productivity Matrix</p>
-        </div>
-        <div class="control-panel-row">
-            <input type="date" id="reportDatePicker" class="calendar-picker" onchange="triggerManualDateFilter()">
-            <div class="live-indicator"><span class="live-dot"></span> LIVE REFRESH</div>
-            <button class="btn-download" onclick="exportComprehensiveCSV()">📋 Export End-of-Day Ledger (.csv)</button>
-        </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙 Dark Mode</button>
+
+    <div id="loginScreen" class="card">
+        <span class="brand-text">O5 Operations</span>
+        <h2>Shift Attendance</h2>
+        <div id="loginRecoveryNotice" class="recovery-banner">⚠️ Active Session Found - Clocking In will recover status</div>
+        <p>Select your profile name to clock in.</p>
+        <select id="agentSelect" onchange="checkForActiveCrashSession()">
+            <option value="">-- Choose Profile --</option>
+        </select>
+        <button id="loginBtn" class="primary" style="margin-top: 15px;" onclick="timeIn()">Time In & Start Shift</button>
     </div>
 
-    <!-- UPPER ROW METRIC BOXES: COMBINED STAFF HOUSING & INTERACTIVE FILTER SLOTS -->
-    <div class="metrics-row">
-        <div id="cardFilterAll" class="metric-card active-filter" onclick="setDashboardFilter('ALL')">
-            <span class="filter-badge">VIEWING ALL</span>
-            <div class="metric-lbl">Total Staff Logged-In</div>
-            <div id="mTotal" class="metric-val" style="color: #ffffff;">0</div>
-        </div>
-        <div id="cardFilterAvail" class="metric-card" onclick="setDashboardFilter('AVAILABLE')">
-            <span class="filter-badge">FILTERED</span>
-            <div class="metric-lbl">Available Queue Staff</div>
-            <div id="mAvail" class="metric-val" style="color: #10b981;">0</div>
-        </div>
-        <div id="cardFilterBreak" class="metric-card" onclick="setDashboardFilter('BREAK')">
-            <span class="filter-badge">FILTERED</span>
-            <div class="metric-lbl">On Break / Lunch</div>
-            <div id="mBreak" class="metric-val" style="color: #f59e0b;">0</div>
-        </div>
-        <div id="cardFilterAux" class="metric-card" onclick="setDashboardFilter('AUX')">
-            <span class="filter-badge">FILTERED</span>
-            <div class="metric-lbl">In Operational AUX</div>
-            <div id="mAux" class="metric-val" style="color: #3b82f6;">0</div>
-        </div>
-    </div>
-
-    <!-- LIVE ROSTER MONITOR WATCH WINDOW -->
-    <h2 style="margin-top: 10px;">🔴 Real-Time Exception & Status Watch Window</h2>
-    <div id="dashboardGrid" class="dashboard-grid"></div>
-
-    <!-- ANALYTICS REPORTING PANELS VIEW -->
-    <div class="reporting-section-wrapper">
+    <div id="appScreen" class="card hidden">
+        <span class="brand-text">O5 Break Tracker</span>
+        <h2 id="welcomeText" style="margin-bottom: 8px;">Agent Panel</h2>
+        <div id="statusBadge" class="status-badge">● Available</div>
         
-        <!-- REPORT VIEW 1: ATTENDANCE & NET AVAILABILITY REPORT -->
-        <div class="report-panel">
-            <h2>📊 Attendance & Queue Availability Summary</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Agent Name</th>
-                            <th>First Clock In</th>
-                            <th>Last Clock Out</th>
-                            <th>Total Shift Duration</th>
-                            <th>Total Time Spent Available</th>
-                            <th>Queue Utilization Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody id="attendanceReportBody">
-                        <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 15px;">No active attendance metrics compiling...</td></tr>
-                    </tbody>
-                </table>
+        <div id="optionsMenu" style="margin-top: 10px;">
+            <label>Productive & Aux Breaks</label>
+            <button id="btnCoffee" class="break-btn" onclick="startTimer('Coffee Break', 10)"><span>☕ Coffee Break</span> <span id="lblCoffee" style="font-size:12px; opacity:0.7;">10m</span></button>
+            <button id="btnBreak1" class="break-btn" onclick="startTimer('1st Break', 15)"><span>1st Break</span> <span id="lblBreak1" style="font-size:12px; opacity:0.7;">15m</span></button>
+            <button id="btnLunch" class="break-btn" onclick="startTimer('Lunch', 60)"><span>Lunch</span> <span id="lblLunch" style="font-size:12px; opacity:0.7;">60m</span></button>
+            <button id="btnBreak2" class="break-btn" onclick="startTimer('2nd Break', 15)"><span>2nd Break</span> <span id="lblBreak2" style="font-size:12px; opacity:0.7;">15m</span></button>
+            
+            <label>Operational States Dropdown</label>
+            <div class="flex-container">
+                <select id="stateDropdown" style="margin:0; padding:10px;">
+                    <option value="">-- Choose State --</option>
+                    <option value="Coaching">Coaching</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="System Issue">System Issue</option>
+                    <option value="Training">Training</option>
+                </select>
+                <button class="primary" style="width:110px; margin:0; padding:10px; font-size:14px;" onclick="startDropdownState()">Go</button>
+            </div>
+
+            <div class="timeout-drawer">
+                <button id="revealExitBtn" class="btn-timeout-reveal" onclick="toggleExitPanel(true)">Request End Shift / Time Out</button>
+                <div id="secureExitPanel" class="hidden">
+                    <p style="color: #dc2626; font-size:12px; font-weight:600; margin:10px 0;">⚠️ Are you sure? This finalizes your entire shift record.</p>
+                    <button class="primary" style="background:#dc2626;" onclick="timeOut()">Yes, Confirm Time Out</button>
+                    <button class="btn-abort" onclick="toggleExitPanel(false)">Cancel</button>
+                </div>
             </div>
         </div>
 
-        <!-- REPORT VIEW 2: AUX CODE ADHERENCE COVERAGE REPORT -->
-        <div class="report-panel">
-            <h2>⏱️ AUX Code Adherence & Runtime Coverage Tracker (Minutes Covered)</h2>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Agent Name</th>
-                            <th>☕ Coffee (Max 10m)</th>
-                            <th>1st Break (Max 15m)</th>
-                            <th>🍱 Lunch (Max 60m)</th>
-                            <th>2nd Break (Max 15m)</th>
-                            <th>🛠️ System Issue / Biz AUX</th>
-                            <th>Total Offline Minutes</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adherenceReportBody">
-                        <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 15px;">No auxiliary exceptions mapped...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="timerContainer" class="hidden">
+            <div id="appRecoveryNotice" class="recovery-banner">⚠️ Crash Recovery Active: Tracking Restored</div>
+            <h4 id="currentActivity" style="margin: 0; color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Activity</h4>
+            <div id="startTimeDisplay" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Started: --:--</div>
+            <div id="timerDisplay">00:00</div>
+            <button class="primary" style="background: #16a34a;" onclick="stopTimer()">Go Back Available (Stop / Pause)</button>
         </div>
     </div>
 
     <script>
-        let selectedFilterDate = "";
-        let currentTargetFilter = "ALL"; // ALL, AVAILABLE, BREAK, AUX
+        const agentRoster = [
+            "Aaron Bonifacio", "Adrian Medina", "Aira Pring", "April Arnaiz", "Ariane Paras", "Catherine Evaristo", 
+            "Charmaine De Loreno", "Christopher Vitug", "Cyrene Giga", "Daisylyn Fernando", "Edwin Magbitang", 
+            "Goodie Bengco", "Herbert Sanguenza", "Irah Montales", "Jana Flororita", "Jesuemy Parico", 
+            "Johaira Maute", "Josefina Ausa", "Joseph Bautista", "Joshua Cortez", "Joyce Ann Gutierrez", 
+            "Julius Mananghaya", "Justine Barrientos", "Justine Tallada", "Katrina Grospe", "Lawrence (Matt) Aplaha", 
+            "Mandy Reyes", "Marisol De Leon", "Mark Nunag", "Mark Yazon", "Mary Grace Manianglung", 
+            "Neil Tolentino", "Policarpio Enriquez Jr", "Regina Lozano", "Ricky Camaya", "Robina Carza", 
+            "Romari Alfonso", "Rossel Santos"
+        ];
+        
+        let timerInterval, totalSeconds = 0, limitSeconds = 0, currentAgent = "", currentActivityType = "", isUnbounded = false;
+        let elapsedMap = { "Coffee Break": 0, "1st Break": 0, "Lunch": 0, "2nd Break": 0 };
 
-        function getShiftReportingDate(inputDate) {
-            const d = inputDate || new Date();
+        const select = document.getElementById('agentSelect');
+        agentRoster.forEach(n => {
+            let opt = document.createElement('option'); opt.value = n; opt.innerHTML = n; select.appendChild(opt);
+        });
+
+        if(localStorage.getItem('o5_theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('themeBtn').innerText = "☀️ Light Mode";
+        }
+
+        function toggleTheme() {
+            let current = document.documentElement.getAttribute('data-theme');
+            let target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('o5_theme', target);
+            document.getElementById('themeBtn').innerText = target === 'dark' ? "☀️ Light Mode" : "🌙 Dark Mode";
+        }
+
+        function toggleExitPanel(show) {
+            if (show) {
+                document.getElementById('revealExitBtn').classList.add('hidden');
+                document.getElementById('secureExitPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('secureExitPanel').classList.add('hidden');
+                document.getElementById('revealExitBtn').classList.remove('hidden');
+            }
+        }
+
+        function getShiftReportingDate() {
+            const d = new Date();
             const hours = d.getHours();
             if (hours >= 0 && hours < 5) {
                 const yesterday = new Date(d.getTime());
@@ -167,310 +173,263 @@
             return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         }
 
-        function initializeCalendarField() {
-            if (!selectedFilterDate) {
-                selectedFilterDate = getShiftReportingDate(new Date());
-                document.getElementById('reportDatePicker').value = selectedFilterDate;
+        function checkForActiveCrashSession() {
+            const name = select.value;
+            const banner = document.getElementById('loginRecoveryNotice');
+            const btn = document.getElementById('loginBtn');
+            if(!name) { banner.style.display = 'none'; btn.innerText = "Time In & Start Shift"; return; }
+
+            const savedState = JSON.parse(localStorage.getItem(`o5_state_${name}`));
+            if(savedState && savedState.date === getShiftReportingDate() && savedState.timerVisible) {
+                banner.style.display = 'block';
+                btn.innerText = "🔌 Restore Active Session";
+            } else {
+                banner.style.display = 'none';
+                btn.innerText = "Time In & Start Shift";
             }
         }
 
-        function triggerManualDateFilter() {
-            selectedFilterDate = document.getElementById('reportDatePicker').value;
-            refreshDashboardEngine();
-        }
-
-        function setDashboardFilter(filterType) {
-            currentTargetFilter = filterType;
+        function timeIn() {
+            const name = select.value; if (!name) return alert("Please choose your name profile.");
+            currentAgent = name;
             
-            // Toggle visual selection ring styles
-            document.querySelectorAll('.metric-card').forEach(c => c.classList.remove('active-filter'));
-            if(filterType === 'ALL') document.getElementById('cardFilterAll').classList.add('active-filter');
-            if(filterType === 'AVAILABLE') document.getElementById('cardFilterAvail').classList.add('active-filter');
-            if(filterType === 'BREAK') document.getElementById('cardFilterBreak').classList.add('active-filter');
-            if(filterType === 'AUX') document.getElementById('cardFilterAux').classList.add('active-filter');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            document.getElementById('welcomeText').innerText = name;
             
-            refreshDashboardEngine();
-        }
+            syncPriorDuration();
+            checkUsedBreaks();
 
-        function formatHMS(totalSeconds) {
-            if (totalSeconds < 0 || isNaN(totalSeconds)) totalSeconds = 0;
-            const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const secs = String(totalSeconds % 60).padStart(2, '0');
-            return `${hrs}:${mins}:${secs}`;
-        }
-
-        function compileOperationalMetrics() {
-            initializeCalendarField();
-            const logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
-            const filteredLogs = logs.filter(l => l.date === selectedFilterDate);
-            const distinctActiveAgents = [...new Set(filteredLogs.map(l => l.name))];
-            
-            const registry = {};
-            distinctActiveAgents.forEach(name => {
-                registry[name] = {
-                    timeInStr: "--",
-                    timeOutStr: "--",
-                    currentActivity: "Offline",
-                    lastActionEpoch: 0,
-                    // Segment-by-segment break tracker map
-                    auxBreakdownSecs: {
-                        "Coffee Break": 0,
-                        "1st Break": 0,
-                        "Lunch": 0,
-                        "2nd Break": 0,
-                        "Operational AUX": 0 // Coaching, Meeting, System Issue, Training
-                    },
-                    totalShiftSecs: 0,
-                    netAvailableSecs: 0,
-                    historicalTransactions: []
-                };
-            });
-
-            filteredLogs.forEach(log => {
-                const agentData = registry[log.name];
-                if (log.activity === "Time In" && agentData.timeInStr === "--") {
-                    agentData.timeInStr = log.time;
-                }
-                if (log.activity === "Time Out") {
-                    agentData.timeOutStr = log.time;
-                }
-                agentData.historicalTransactions.push(log);
-            });
-
-            const currentEpoch = Date.now();
-
-            Object.keys(registry).forEach(name => {
-                const item = registry[name];
-                const txn = item.historicalTransactions;
-                if (txn.length === 0) return;
-
-                txn.sort((a, b) => a.timestamp - b.timestamp);
-
-                const initialClockIn = txn.find(t => t.activity === "Time In");
-                const terminalClockOut = txn.find(t => t.activity === "Time Out");
+            const savedState = JSON.parse(localStorage.getItem(`o5_state_${name}`));
+            if (savedState && savedState.date === getShiftReportingDate() && savedState.timerVisible) {
+                document.getElementById('appRecoveryNotice').style.display = 'block';
+                recoverSessionState(savedState);
+            } else {
+                document.getElementById('appRecoveryNotice').style.display = 'none';
                 
-                const latestTxn = txn[txn.length - 1];
-                item.currentActivity = latestTxn.activity;
-                item.lastActionEpoch = latestTxn.timestamp;
+                const targetDayFile = getShiftReportingDate();
+                const logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+                const primaryTimeInExists = logs.find(l => l.name === currentAgent && l.date === targetDayFile && l.activity === "Time In");
+                
+                if (!primaryTimeInExists) {
+                    logEvent("Time In", "Shift Started");
+                }
+                
+                saveStateCheckpoint("Available", false, false);
+                document.getElementById('timerContainer').classList.add('hidden');
+                document.getElementById('optionsMenu').classList.remove('hidden');
+                document.getElementById('statusBadge').innerText = "● Available";
+            }
+        }
 
-                // Process historical complete items
-                txn.forEach(step => {
-                    if (step.status === "Completed" || step.status === "Paused Segment") {
-                        if (item.auxBreakdownSecs.hasOwnProperty(step.activity)) {
-                            item.auxBreakdownSecs[step.activity] += step.duration;
-                        } else if(step.activity !== "Time In" && step.activity !== "Available" && step.activity !== "Time Out") {
-                            item.auxBreakdownSecs["Operational AUX"] += step.duration;
-                        }
+        function saveStateCheckpoint(activity, timerVisible, unboundedState) {
+            const state = {
+                date: getShiftReportingDate(),
+                agent: currentAgent,
+                activity: activity,
+                timerVisible: timerVisible,
+                isUnbounded: unboundedState,
+                totalSeconds: totalSeconds,
+                limitSeconds: limitSeconds,
+                startTimeDisplay: document.getElementById('startTimeDisplay').innerText,
+                epoch: Date.now()
+            };
+            localStorage.setItem(`o5_state_${currentAgent}`, JSON.stringify(state));
+        }
+
+        function recoverSessionState(savedState) {
+            currentActivityType = savedState.activity;
+            isUnbounded = savedState.isUnbounded;
+            totalSeconds = savedState.totalSeconds;
+            limitSeconds = savedState.limitSeconds;
+
+            if (savedState.epoch) {
+                const diffSeconds = Math.floor((Date.now() - savedState.epoch) / 1000);
+                if (diffSeconds > 0) {
+                    totalSeconds += diffSeconds;
+                }
+            }
+
+            document.getElementById('optionsMenu').classList.add('hidden');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('currentActivity').innerText = currentActivityType;
+            document.getElementById('startTimeDisplay').innerText = savedState.startTimeDisplay;
+            document.getElementById('statusBadge').innerText = `● ${currentActivityType}`;
+            
+            if (isUnbounded) {
+                document.getElementById('timerDisplay').className = "unbounded";
+            } else {
+                document.getElementById('timerDisplay').className = totalSeconds > limitSeconds ? "overtime" : "";
+            }
+            
+            runTimerLoop();
+        }
+
+        function syncPriorDuration() {
+            const today = getShiftReportingDate();
+            const logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+            Object.keys(elapsedMap).forEach(key => {
+                let accumulatedSecs = 0;
+                logs.forEach(l => {
+                    if(l.name === currentAgent && l.date === today && l.activity === key && (l.status === "Paused Segment" || l.status === "Completed")) {
+                        accumulatedSecs += l.duration;
                     }
                 });
-
-                // Compute real-time accumulation frames
-                if (initialClockIn) {
-                    if (item.currentActivity !== "Time Out") {
-                        item.totalShiftSecs = Math.floor((currentEpoch - initialClockIn.timestamp) / 1000);
-                        
-                        const actLower = item.currentActivity.toLowerCase();
-                        // If agent is sitting inside a live break state right now, pile on rolling tally
-                        if (actLower !== "time in" && actLower !== "available") {
-                            const rollingLiveDelta = Math.floor((currentEpoch - item.lastActionEpoch) / 1000);
-                            if (item.auxBreakdownSecs.hasOwnProperty(item.currentActivity)) {
-                                item.auxBreakdownSecs[item.currentActivity] += rollingLiveDelta;
-                            } else {
-                                item.auxBreakdownSecs["Operational AUX"] += rollingLiveDelta;
-                            }
-                        }
-                    } else if (terminalClockOut) {
-                        item.totalShiftSecs = Math.floor((terminalClockOut.timestamp - initialClockIn.timestamp) / 1000);
-                        item.currentActivity = "Offline";
-                    }
-
-                    // Sum offline time total
-                    let totalOfflineTimeSum = 0;
-                    Object.keys(item.auxBreakdownSecs).forEach(k => { totalOfflineTimeSum += item.auxBreakdownSecs[k]; });
-                    
-                    // Available Time calculation: Anything spent outside offline AUX segments is active Queue Availability
-                    item.netAvailableSecs = item.totalShiftSecs - totalOfflineTimeSum;
-                    if(item.netAvailableSecs < 0) item.netAvailableSecs = 0;
-                }
+                elapsedMap[key] = accumulatedSecs;
             });
-
-            return registry;
         }
 
-        function refreshDashboardEngine() {
-            const registry = compileOperationalMetrics();
-            const grid = document.getElementById('dashboardGrid');
-            const attendanceTable = document.getElementById('attendanceReportBody');
-            const adherenceTable = document.getElementById('adherenceReportBody');
-            const currentEpoch = Date.now();
+        function checkUsedBreaks() {
+            const today = getShiftReportingDate();
+            const logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+            
+            const states = {
+                "Coffee Break": { btn: 'btnCoffee', limit: 10 },
+                "1st Break": { btn: 'btnBreak1', limit: 15 },
+                "Lunch": { btn: 'btnLunch', limit: 60 },
+                "2nd Break": { btn: 'btnBreak2', limit: 15 }
+            };
 
-            grid.innerHTML = "";
-            let countTotal = 0, countBreak = 0, countAux = 0, countAvail = 0;
+            Object.keys(states).forEach(act => {
+                const cfg = states[act];
+                const hasCompleted = logs.some(l => l.name === currentAgent && l.date === today && l.activity === act && l.status === "Completed");
+                const currentElapsedSecs = elapsedMap[act] || 0;
 
-            // Arrays to parse reporting views data engines
-            let attendanceRowsHTML = "";
-            let adherenceRowsHTML = "";
+                document.getElementById(cfg.btn).disabled = false;
 
-            Object.keys(registry).forEach(name => {
-                const metrics = registry[name];
-                if (metrics.currentActivity === "Offline") return; // Filter out completely off-shift personnel
-
-                countTotal++;
-                let categorisedGroup = "AVAILABLE"; 
-                let structuralClass = "status-avail";
-                let activeTimerRenderText = "—";
-                let isExceptionActive = false;
-
-                const actLower = metrics.currentActivity.toLowerCase();
-                // Treat basic system entry states ("Time In" or "Available") as Queue Available pools automatically
-                if (actLower === "available" || actLower === "time in") {
-                    countAvail++;
-                    categorisedGroup = "AVAILABLE";
-                    structuralClass = "status-avail";
-                } else if (actLower.includes("break") || actLower === "lunch") {
-                    countBreak++;
-                    categorisedGroup = "BREAK";
-                    structuralClass = "status-break";
-                    isExceptionActive = true;
+                if (hasCompleted || currentElapsedSecs >= (cfg.limit * 60)) {
+                    document.getElementById(cfg.btn).disabled = true;
+                    document.getElementById(cfg.btn).innerHTML = `<span>${act} (Completed)</span> ✓`;
+                } else if (currentElapsedSecs > 0) {
+                    let remainingMins = Math.ceil((cfg.limit * 60 - currentElapsedSecs) / 60);
+                    document.getElementById(cfg.btn).innerHTML = `<span>${act} (Resume)</span> <span style="font-size:12px; color:#2563eb;">${remainingMins}m left</span>`;
                 } else {
-                    countAux++;
-                    categorisedGroup = "AUX";
-                    structuralClass = "status-aux"; 
-                    isExceptionActive = true;
-                }
-
-                if (isExceptionActive && metrics.lastActionEpoch > 0) {
-                    const realTimeDurationSecs = Math.floor((currentEpoch - metrics.lastActionEpoch) / 1000);
-                    activeTimerRenderText = formatHMS(realTimeDurationSecs).substring(3);
-                }
-
-                // EVALUATE INTERACTIVE TOGGLE CARD FILTER RULES BEFORE LAYING DOWN MONITORS
-                let matchFilter = false;
-                if (currentTargetFilter === "ALL") matchFilter = true;
-                else if (currentTargetFilter === categorisedGroup) matchFilter = true;
-
-                if (matchFilter) {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = `dash-card ${structuralClass}`;
-                    cardElement.innerHTML = `
-                        <div class="dash-agent-name">${name}</div>
-                        <div class="dash-state-label">State: ${metrics.currentActivity === 'Time In' ? 'Available' : metrics.currentActivity}</div>
-                        ${isExceptionActive ? `<div class="timer-display">${activeTimerRenderText}</div>` : `<div class="placeholder-display">Available</div>`}
-                        <div class="card-footer-info">
-                            Time In: <b>${metrics.timeInStr}</b><br>
-                            Accumulated Availability: <b>${formatHMS(metrics.netAvailableSecs)}</b>
-                        </div>
-                    `;
-                    grid.appendChild(cardElement);
+                    document.getElementById(cfg.btn).innerHTML = `<span>${act}</span> <span style="font-size:12px; opacity:0.7;">${cfg.limit}m</span>`;
                 }
             });
-
-            // Update Header widgets count
-            document.getElementById('mTotal').innerText = countTotal;
-            document.getElementById('mAvail').innerText = countAvail;
-            document.getElementById('mBreak').innerText = countBreak;
-            document.getElementById('mAux').innerText = countAux;
-
-            if(grid.innerHTML === "") {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #475569; padding: 30px; background: #1e293b; border-radius: 8px;">No agents found matching this active status view context.</div>`;
-            }
-
-            // COMPILE REPORT 1 AND REPORT 2 LINE ITEMS OVER THE CURRENT ROSTER
-            const sortedRosterNames = Object.keys(registry).sort();
-            
-            if(sortedRosterNames.length === 0) {
-                const emptyRow = `<tr><td colspan="10" style="text-align:center; color:#64748b;">No production metrics archived for this calendar date.</td></tr>`;
-                attendanceTable.innerHTML = emptyRow;
-                adherenceTable.innerHTML = emptyRow;
-                return;
-            }
-
-            sortedRosterNames.forEach(name => {
-                const m = registry[name];
-                
-                // Calculate utilization percentage logic safely
-                let utilPercentage = "0%";
-                if(m.totalShiftSecs > 0) {
-                    utilPercentage = `${Math.round((m.netAvailableSecs / m.totalShiftSecs) * 100)}%`;
-                }
-
-                // Report View Line 1 String Builder
-                attendanceRowsHTML += `
-                    <tr>
-                        <td style="font-weight:700; color:white;">${name}</td>
-                        <td><span class="badge-table badge-avail">${m.timeInStr}</span></td>
-                        <td><span class="badge-table ${m.timeOutStr !== '--' ? 'badge-break':'badge-avail'}">${m.timeOutStr}</span></td>
-                        <td>${formatHMS(m.totalShiftSecs)}</td>
-                        <td style="font-weight:700; color:#10b981;">${formatHMS(m.netAvailableSecs)}</td>
-                        <td style="color:#3b82f6; font-weight:600;">${utilPercentage}</td>
-                    </tr>
-                `;
-
-                // Convert operational seconds records down into minutes for clear adherence tracking views
-                let coffeeMins = (m.auxBreakdownSecs["Coffee Break"] / 60).toFixed(1);
-                let break1Mins = (m.auxBreakdownSecs["1st Break"] / 60).toFixed(1);
-                let lunchMins = (m.auxBreakdownSecs["Lunch"] / 60).toFixed(1);
-                let break2Mins = (m.auxBreakdownSecs["2nd Break"] / 60).toFixed(1);
-                let bizAuxMins = (m.auxBreakdownSecs["Operational AUX"] / 60).toFixed(1);
-
-                let absoluteOfflineSecs = 0;
-                Object.keys(m.auxBreakdownSecs).forEach(k => { absoluteOfflineSecs += m.auxBreakdownSecs[k]; });
-                let cumulativeOfflineMins = (absoluteOfflineSecs / 60).toFixed(1);
-
-                // Check and highlight over-break limits dynamically with red alert labels
-                let coffeeClass = parseFloat(coffeeMins) > 10 ? 'style="color:#ef4444; font-weight:bold;"' : '';
-                let break1Class = parseFloat(break1Mins) > 15 ? 'style="color:#ef4444; font-weight:bold;"' : '';
-                let lunchClass = parseFloat(lunchMins) > 60 ? 'style="color:#ef4444; font-weight:bold;"' : '';
-                let break2Class = parseFloat(break2Mins) > 15 ? 'style="color:#ef4444; font-weight:bold;"' : '';
-
-                // Report View Line 2 String Builder
-                adherenceRowsHTML += `
-                    <tr>
-                        <td style="font-weight:700; color:white;">${name}</td>
-                        <td ${coffeeClass}>${coffeeMins}m</td>
-                        <td ${break1Class}>${break1Mins}m</td>
-                        <td ${lunchClass}>${lunchMins}m</td>
-                        <td ${break2Class}>${break2Mins}m</td>
-                        <td style="color:#94a3b8;">${bizAuxMins}m</td>
-                        <td style="font-weight:700; color:#f59e0b;">${cumulativeOfflineMins}m</td>
-                    </tr>
-                `;
-            });
-
-            attendanceTable.innerHTML = attendanceRowsHTML;
-            adherenceTable.innerHTML = adherenceRowsHTML;
         }
 
-        function exportComprehensiveCSV() {
-            const registry = compileOperationalMetrics();
-            const names = Object.keys(registry);
-            if (names.length === 0) return alert("Zero metrics database entries found to compile into report on this date.");
-
-            let csvStr = "data:text/csv;charset=utf-8,";
-            csvStr += "Date Target,Agent Profile Name,First Shift Login,Shift Logout,Total Running Shift Seconds,Net Available Queue Seconds,Coffee AUX Mins,1st Break Mins,Lunch Mins,2nd Break Mins,Other System AUX Mins\n";
-            
-            names.forEach(n => {
-                const m = registry[n];
-                let cMin = (m.auxBreakdownSecs["Coffee Break"] / 60).toFixed(2);
-                let b1Min = (m.auxBreakdownSecs["1st Break"] / 60).toFixed(2);
-                let lMin = (m.auxBreakdownSecs["Lunch"] / 60).toFixed(2);
-                let b2Min = (m.auxBreakdownSecs["2nd Break"] / 60).toFixed(2);
-                let auxMin = (m.auxBreakdownSecs["Operational AUX"] / 60).toFixed(2);
-                
-                csvStr += `"${selectedFilterDate}","${n}","${m.timeInStr}","${m.timeOutStr}","${m.totalShiftSecs}","${m.netAvailableSecs}","${cMin}","${b1Min}","${lMin}","${b2Min}","${auxMin}"\n`;
-            });
-
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvStr));
-            link.setAttribute("download", `O5_EOD_Master_Operational_Ledger_${selectedFilterDate}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function startDropdownState() {
+            const val = document.getElementById('stateDropdown').value;
+            if(!val) return alert("Please select an operational auxiliary state.");
+            startTimer(val, 0, true);
         }
 
-        setInterval(refreshDashboardEngine, 1000);
-        window.onload = refreshDashboardEngine;
+        function startTimer(activity, minutes, unboundedState = false) {
+            currentActivityType = activity;
+            document.getElementById('optionsMenu').classList.add('hidden');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('currentActivity').innerText = activity;
+            document.getElementById('appRecoveryNotice').style.display = 'none';
+            
+            const timeNowStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            document.getElementById('startTimeDisplay').innerText = `Started at: ${timeNowStr}`;
+            document.getElementById('statusBadge').innerText = `● ${activity}`;
+            document.getElementById('statusBadge').removeAttribute('style');
+            
+            isUnbounded = unboundedState;
+            
+            if (isUnbounded) {
+                totalSeconds = 0;
+                limitSeconds = 0;
+                document.getElementById('timerDisplay').className = "unbounded";
+                logEvent(activity, "Unbounded State Start");
+            } else {
+                totalSeconds = elapsedMap[activity] || 0;
+                limitSeconds = minutes * 60;
+                document.getElementById('timerDisplay').className = "";
+                logEvent(activity, "Resumed / Started Segment");
+            }
+
+            runTimerLoop();
+        }
+
+        function runTimerLoop() {
+            if(timerInterval) clearInterval(timerInterval);
+            
+            let updateClockView = () => {
+                let m = Math.floor(totalSeconds / 60); let s = totalSeconds % 60;
+                document.getElementById('timerDisplay').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                
+                if (!isUnbounded && totalSeconds > limitSeconds) {
+                    document.getElementById('timerDisplay').className = "overtime";
+                    document.getElementById('statusBadge').innerText = "⚠️ Overtime!";
+                    document.getElementById('statusBadge').style.background = "#fee2e2";
+                    document.getElementById('statusBadge').style.color = "#b91c1c";
+                }
+            };
+
+            updateClockView();
+
+            timerInterval = setInterval(() => {
+                totalSeconds++;
+                updateClockView();
+                saveStateCheckpoint(currentActivityType, true, isUnbounded);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('appRecoveryNotice').style.display = 'none';
+            
+            // CRITICAL SYNC HOOK: Instantly log "Available" transition so dashboard changes immediately
+            const today = getShiftReportingDate();
+            let logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+            
+            if (isUnbounded) {
+                logEvent(currentActivityType, "Unbounded State Completed", false, totalSeconds);
+            } else {
+                // Read current runtime delta for this segmented run
+                let basePreviousSecs = elapsedMap[currentActivityType] || 0;
+                let currentRunDeltaSecs = totalSeconds - basePreviousSecs;
+                elapsedMap[currentActivityType] = totalSeconds;
+                
+                const crossedLimit = totalSeconds >= limitSeconds;
+                if (crossedLimit) {
+                    logEvent(currentActivityType, "Completed", false, currentRunDeltaSecs);
+                } else {
+                    logEvent(currentActivityType, "Paused Segment", false, currentRunDeltaSecs);
+                }
+            }
+            
+            // Force fire "Available" event right after segment closure to clear exception locks instantly
+            logEvent("Available", "Segmented Active");
+            
+            document.getElementById('timerContainer').classList.add('hidden');
+            document.getElementById('optionsMenu').classList.remove('hidden');
+            document.getElementById('stateDropdown').value = "";
+            document.getElementById('statusBadge').innerText = "● Available";
+            document.getElementById('statusBadge').removeAttribute('style');
+            
+            toggleExitPanel(false);
+            saveStateCheckpoint("Available", false, false);
+            checkUsedBreaks();
+        }
+
+        function timeOut() {
+            logEvent("Time Out", "Shift Ended");
+            localStorage.removeItem(`o5_state_${currentAgent}`);
+            alert("Shift finalized. Data synced!");
+            location.reload();
+        }
+
+        function logEvent(act, stat, isOver = false, dur = 0) {
+            const today = getShiftReportingDate(); 
+            const timeNow = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            let logs = JSON.parse(localStorage.getItem('o5_bpo_logs') || '[]');
+
+            logs.push({ 
+                date: today, 
+                name: currentAgent, 
+                activity: act, 
+                status: stat, 
+                time: timeNow, 
+                overtime: isOver, 
+                duration: dur, 
+                timestamp: Date.now() 
+            });
+            localStorage.setItem('o5_bpo_logs', JSON.stringify(logs));
+        }
     </script>
 </body>
 </html>
